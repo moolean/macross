@@ -9,7 +9,7 @@ Macross is a terminal-first control plane for your Macs. It wraps SSH + Ansible 
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_NAME/macross/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/moolean/macross/main/install.sh | bash
 ```
 
 Or from a local checkout:
