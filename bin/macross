@@ -1,4 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
-DIR="$(cd "$(dirname "$0")/.." && pwd)"
-exec "$DIR/bin/mx" "$@"
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  TARGET="$(readlink "$SOURCE")"
+  if [[ "$TARGET" != /* ]]; then
+    SOURCE="$DIR/$TARGET"
+  else
+    SOURCE="$TARGET"
+  fi
+done
+DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+exec "$DIR/mx" "$@"

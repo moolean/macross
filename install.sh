@@ -1,32 +1,70 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
 APP_NAME="Macross"
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_OWNER="moolean"
+REPO_NAME="macross"
+REPO_BRANCH="main"
 INSTALL_DIR="$HOME/.local/share/macross"
 BIN_DIR="$HOME/.local/bin"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-mkdir -p "$INSTALL_DIR" "$BIN_DIR"
+need_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Error: required command not found: $1" >&2
+    exit 1
+  fi
+}
 
-cp "$REPO_DIR/README.md" "$TMP_DIR/"
-cp "$REPO_DIR/README.zh-CN.md" "$TMP_DIR/"
-cp "$REPO_DIR/LICENSE" "$TMP_DIR/"
-cp "$REPO_DIR/install.sh" "$TMP_DIR/"
-mkdir -p "$TMP_DIR/bin" "$TMP_DIR/macross"
-cp "$REPO_DIR/bin/mx" "$TMP_DIR/bin/"
-cp "$REPO_DIR/bin/macross" "$TMP_DIR/bin/"
-cp -R "$REPO_DIR/macross/." "$TMP_DIR/macross/"
+copy_repo_files() {
+  local src="$1"
+  cp "$src/README.md" "$TMP_DIR/"
+  cp "$src/README.zh-CN.md" "$TMP_DIR/"
+  cp "$src/LICENSE" "$TMP_DIR/"
+  cp "$src/install.sh" "$TMP_DIR/"
+  mkdir -p "$TMP_DIR/bin" "$TMP_DIR/macross"
+  cp "$src/bin/mx" "$TMP_DIR/bin/"
+  cp "$src/bin/macross" "$TMP_DIR/bin/"
+  cp -R "$src/macross/." "$TMP_DIR/macross/"
+}
 
-rm -rf "$INSTALL_DIR"
-mkdir -p "$INSTALL_DIR"
-cp -R "$TMP_DIR/." "$INSTALL_DIR/"
-chmod +x "$INSTALL_DIR/install.sh" "$INSTALL_DIR/bin/mx" "$INSTALL_DIR/bin/macross"
-ln -sf "$INSTALL_DIR/bin/mx" "$BIN_DIR/mx"
-ln -sf "$INSTALL_DIR/bin/macross" "$BIN_DIR/macross"
+fetch_remote_repo() {
+  need_cmd curl
+  need_cmd tar
+  local archive_url="https://codeload.github.com/${REPO_OWNER}/${REPO_NAME}/tar.gz/refs/heads/${REPO_BRANCH}"
+  local archive_path="$TMP_DIR/repo.tar.gz"
+  curl -fsSL "$archive_url" -o "$archive_path"
+  tar -xzf "$archive_path" -C "$TMP_DIR"
+  local extracted="$TMP_DIR/${REPO_NAME}-${REPO_BRANCH}"
+  if [ ! -d "$extracted" ]; then
+    echo "Error: failed to unpack repository archive." >&2
+    exit 1
+  fi
+  copy_repo_files "$extracted"
+}
 
-printf '\n%s installed.\n' "$APP_NAME"
-printf 'Commands:\n  %s\n  %s\n' "$BIN_DIR/mx" "$BIN_DIR/macross"
-printf '\nIf %s is not on your PATH, add this to ~/.zshrc or ~/.bashrc:\n' "$BIN_DIR"
-printf '  export PATH="$HOME/.local/bin:$PATH"\n\n'
-printf 'Then run:\n  mx\n\n'
+main() {
+  mkdir -p "$INSTALL_DIR" "$BIN_DIR"
+
+  if [ -f "./README.md" ] && [ -d "./macross" ] && [ -f "./bin/mx" ]; then
+    copy_repo_files "."
+  else
+    fetch_remote_repo
+  fi
+
+  rm -rf "$INSTALL_DIR"
+  mkdir -p "$INSTALL_DIR"
+  cp -R "$TMP_DIR/." "$INSTALL_DIR/"
+  chmod +x "$INSTALL_DIR/install.sh" "$INSTALL_DIR/bin/mx" "$INSTALL_DIR/bin/macross"
+  ln -sf "$INSTALL_DIR/bin/mx" "$BIN_DIR/mx"
+  ln -sf "$INSTALL_DIR/bin/macross" "$BIN_DIR/macross"
+
+  printf '\n%s installed.\n' "$APP_NAME"
+  printf 'Commands:\n  %s\n  %s\n' "$BIN_DIR/mx" "$BIN_DIR/macross"
+  printf '\nIf %s is not on your PATH, add this to ~/.zshrc or ~/.bashrc:\n' "$BIN_DIR"
+  printf '  export PATH="$HOME/.local/bin:$PATH"\n\n'
+  printf 'Then run:\n  mx\n\n'
+}
+
+main "$@"
