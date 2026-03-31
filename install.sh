@@ -52,6 +52,9 @@ local_repo_dir() {
   if [ ! -e "$source" ]; then
     return 1
   fi
+  if [ "$(basename "$source")" != "install.sh" ]; then
+    return 1
+  fi
   local dir
   dir="$(cd "$(dirname "$source")" && pwd)"
   if [ -f "$dir/README.md" ] && [ -d "$dir/macross" ] && [ -f "$dir/bin/mx" ]; then
