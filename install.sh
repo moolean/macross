@@ -52,6 +52,9 @@ local_repo_dir() {
   if [ ! -e "$source" ]; then
     return 1
   fi
+  if [ "$(basename "$0")" != "install.sh" ]; then
+    return 1
+  fi
   if [ "$(basename "$source")" != "install.sh" ]; then
     return 1
   fi
