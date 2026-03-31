@@ -44,11 +44,28 @@ fetch_remote_repo() {
   copy_repo_files "$extracted"
 }
 
+local_repo_dir() {
+  local source="${BASH_SOURCE[0]:-}"
+  if [ -z "$source" ]; then
+    return 1
+  fi
+  if [ ! -e "$source" ]; then
+    return 1
+  fi
+  local dir
+  dir="$(cd "$(dirname "$source")" && pwd)"
+  if [ -f "$dir/README.md" ] && [ -d "$dir/macross" ] && [ -f "$dir/bin/mx" ]; then
+    printf '%s\n' "$dir"
+    return 0
+  fi
+  return 1
+}
+
 main() {
   mkdir -p "$INSTALL_DIR" "$BIN_DIR"
 
-  if [ -f "./README.md" ] && [ -d "./macross" ] && [ -f "./bin/mx" ]; then
-    copy_repo_files "."
+  if repo_dir="$(local_repo_dir)"; then
+    copy_repo_files "$repo_dir"
   else
     fetch_remote_repo
   fi
